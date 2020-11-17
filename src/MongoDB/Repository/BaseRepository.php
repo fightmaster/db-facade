@@ -4,18 +4,15 @@
  * @author Dmitry Petrov <old.fightmaster@gmail.com>
  */
 
-namespace Fightmaster\MongoDB\Repository;
+namespace Fightmaster\DB\MongoDB\Repository;
 
-use Fightmaster\MongoDB\Model\StoreItemInterface;
+use Fightmaster\DB\RepositoryInterface;
+use Fightmaster\DB\Model\StoreItemInterface;
 use MongoDB\Collection;
 use MongoDB\Database;
-use MongoDB\DeleteResult;
 use MongoDB\Driver\Cursor;
-use MongoDB\InsertManyResult;
-use MongoDB\InsertOneResult;
-use MongoDB\UpdateResult;
 
-abstract class BaseRepository
+class BaseRepository implements RepositoryInterface
 {
     /**
      * @var Database;
@@ -27,31 +24,24 @@ abstract class BaseRepository
      */
     protected $collection;
 
-    /**
-     * @return string
-     */
-    abstract protected function getCollectionName(): string;
-
-    public function __construct(Database $database)
+    public function __construct(Database $database, $collectionName)
     {
         $this->database = $database;
-        $this->collection = $this->database->{$this->getCollectionName()};
+        $this->collection = $this->database->{$collectionName};
     }
 
     /**
      * @param StoreItemInterface $object
-     * @return InsertOneResult
      */
-    public function insert(StoreItemInterface $object): InsertOneResult
+    public function insert(StoreItemInterface $object)
     {
-        return $this->collection->insertOne($object->toStoreArray());
+        $this->collection->insertOne($object->toStoreArray());
     }
 
     /**
      * @param StoreItemInterface[] $collection
-     * @return InsertManyResult
      */
-    public function insertCollection($collection): InsertManyResult
+    public function insertCollection($collection)
     {
         $objects = [];
         foreach ($collection as $item) {
@@ -61,34 +51,31 @@ abstract class BaseRepository
             $objects[] = $item->toStoreArray();
         }
 
-        return $this->collection->insertMany($objects);
+        $this->collection->insertMany($objects);
     }
 
     /**
      * @param StoreItemInterface $object
-     * @return UpdateResult
      */
-    public function update(StoreItemInterface $object): UpdateResult
+    public function update(StoreItemInterface $object)
     {
-        return $this->collection->updateOne(['_id' => $object->getId()], ['$set' => $object->toStoreArray()]);
+        $this->collection->updateOne(['_id' => $object->getId()], ['$set' => $object->toStoreArray()]);
     }
 
     /**
      * @param StoreItemInterface $object
-     * @return DeleteResult
      */
-    public function delete(StoreItemInterface $object): DeleteResult
+    public function delete(StoreItemInterface $object)
     {
-        return $this->collection->deleteOne(['_id' => $object->getId()]);
+        $this->collection->deleteOne(['_id' => $object->getId()]);
     }
 
     /**
      * @param array $filter
-     * @return DeleteResult
      */
-    public function deleteCollection(array $filter): DeleteResult
+    public function deleteCollection(array $filter)
     {
-        return $this->collection->deleteMany($filter);
+        $this->collection->deleteMany($filter);
     }
 
     /**
@@ -101,6 +88,37 @@ abstract class BaseRepository
     }
 
     /**
+     * @param string $id
+     * @param string $findItemClass
+     * @return StoreItemInterface|null|array
+     */
+    public function find(string $id, string $findItemClass = null)
+    {
+        $row = $this->collection->findOne(['_id' => $id], ['typeMap' => $this->getTypeMap()]);
+
+        if (empty($row)) {
+            return null;
+        }
+        return isset($findItemClass) ? $findItemClass::restore($row) : $row;
+    }
+
+    /**
+     * @param array $filter
+     * @param array $options
+     * @param string|null $findItemClass
+     * @return StoreItemInterface|null|array
+     */
+    public function findBy(array $filter = [], array $options = [], string $findItemClass = null)
+    {
+        if (!isset($options['typeMap'])) {
+            $options['typeMap'] = $this->getTypeMap();
+        }
+        $cursor = $this->collection->find($filter, $options);
+
+        return $this->handleCursorResult($cursor, $findItemClass);
+    }
+
+    /**
      * @return string[]
      */
     protected function getTypeMap(): array
@@ -110,10 +128,10 @@ abstract class BaseRepository
 
     /**
      * @param Cursor $cursor
-     * @param string $storeItemClass
+     * @param string|null $storeItemClass
      * @return array
      */
-    protected function handleCursorResult(Cursor $cursor, string $storeItemClass): array
+    protected function handleCursorResult(Cursor $cursor, string $storeItemClass = null): array
     {
         if (empty($cursor)) {
             return [];
@@ -122,26 +140,11 @@ abstract class BaseRepository
         $rows = $cursor->toArray();
 
         $result = [];
+        $isObject = isset($storeItemClass);
         foreach ($rows as $row) {
-            $result[] = $storeItemClass::restore($row);
+            $result[] = $isObject ? $storeItemClass::restore($row) : $row;
         }
 
         return $result;
-    }
-
-    /**
-     * @param string $id
-     * @param string $findItemClass
-     * @return StoreItemInterface|null
-     */
-    protected function _find(string $id, string $findItemClass): ?StoreItemInterface
-    {
-        $row = $this->collection->findOne(['_id' => $id], ['typeMap' => $this->getTypeMap()]);
-
-        if (empty($row)) {
-            return null;
-        }
-
-        return $findItemClass::restore($row);
     }
 }

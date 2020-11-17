@@ -4,7 +4,7 @@
  * @author Dmitry Petrov <old.fightmaster@gmail.com>
  */
 
-namespace Fightmaster\MongoDB\Model;
+namespace Fightmaster\DB\Model;
 
 interface StoreItemInterface extends ItemInterface
 {

@@ -1,6 +1,6 @@
 {
-    "name": "fightmaster/mongodb-facade",
-    "description": "Smallest facade which simplify working with MongoDB on the project",
+    "name": "fightmaster/db-facade",
+    "description": "Smallest facade which simplify working with DB on the project",
     "type": "library",
     "require": {
         "php": "^7.4|| ^7.2 || ^7.3",
@@ -9,8 +9,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Fightmaster\\MongoDB\\": "src/MongoDB/",
-            "Fightmaster\\MongoDB\\Tests\\": "tests/MongoDB/Tests/"
+            "Fightmaster\\DB\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Fightmaster\\DB\\Tests\\": "tests/Tests/"
         }
     },
     "license": "MIT",
