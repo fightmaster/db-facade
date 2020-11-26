@@ -6,12 +6,14 @@
 
 namespace Fightmaster\DB\Model;
 
-interface StoreItemInterface extends ItemInterface
+interface StoreItemInterface
 {
+    public function getId();
+
     /**
      * @return array
      */
-    public function toStoreArray(): array;
+    public function store(): array;
 
     /**
      * @param array $row

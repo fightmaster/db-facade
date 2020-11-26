@@ -35,7 +35,9 @@ class BaseRepository implements RepositoryInterface
      */
     public function insert(StoreItemInterface $object)
     {
-        $this->collection->insertOne($object->toStoreArray());
+        $data = $object->store();
+        $data['_id'] = $object->getId();
+        $this->collection->insertOne($data);
     }
 
     /**
@@ -48,7 +50,9 @@ class BaseRepository implements RepositoryInterface
             if (!$item instanceof StoreItemInterface) {
                 throw new \LogicException('Every item of collection should be implement StoreItemInterface');
             }
-            $objects[] = $item->toStoreArray();
+            $data = $item->store();
+            $data['_id'] = $item->getId();
+            $objects[] = $data;
         }
 
         $this->collection->insertMany($objects);
@@ -59,7 +63,7 @@ class BaseRepository implements RepositoryInterface
      */
     public function update(StoreItemInterface $object)
     {
-        $this->collection->updateOne(['_id' => $object->getId()], ['$set' => $object->toStoreArray()]);
+        $this->collection->updateOne(['_id' => $object->getId()], ['$set' => $object->store()]);
     }
 
     /**
@@ -142,6 +146,7 @@ class BaseRepository implements RepositoryInterface
         $result = [];
         $isObject = isset($storeItemClass);
         foreach ($rows as $row) {
+            unset($row['_id']);
             $result[] = $isObject ? $storeItemClass::restore($row) : $row;
         }
 
