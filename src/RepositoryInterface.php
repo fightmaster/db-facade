@@ -44,7 +44,7 @@ interface RepositoryInterface
 
     /**
      * @param string $id
-     * @param string $findItemClass
+     * @param string|null $findItemClass
      * @return StoreItemInterface|null|array
      */
     public function find(string $id, string $findItemClass = null);
