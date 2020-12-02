@@ -8,7 +8,7 @@ namespace Fightmaster\DB;
 
 use Fightmaster\DB\Model\StoreItemInterface;
 
-class RepositoryFacade implements RepositoryInterface
+abstract class RepositoryFacade implements RepositoryInterface
 {
     /**
      * @var RepositoryInterface;
@@ -16,12 +16,22 @@ class RepositoryFacade implements RepositoryInterface
     protected $repository;
 
     /**
-     * @param RepositoryInterface $repository
+     * @param RepositoryFacadeFactory $repositoryFacadeFactory
      */
-    public function __construct(RepositoryInterface $repository)
+    public function __construct(RepositoryFacadeFactory $repositoryFacadeFactory)
     {
-        $this->repository = $repository;
+        $this->repository = $repositoryFacadeFactory->get($this->getClassName(), $this->getTableName());
     }
+
+    /**
+     * @return string
+     */
+    abstract public function getClassName(): string;
+
+    /**
+     * @return string
+     */
+    abstract public function getTableName(): string;
 
     /**
      * @param StoreItemInterface $object
@@ -34,7 +44,7 @@ class RepositoryFacade implements RepositoryInterface
     /**
      * @param StoreItemInterface[] $collection
      */
-    public function insertCollection($collection)
+    public function insertCollection(array $collection)
     {
         return $this->repository->insertCollection($collection);
     }
@@ -74,22 +84,20 @@ class RepositoryFacade implements RepositoryInterface
 
     /**
      * @param string $id
-     * @param string|null $findItemClass
      * @return StoreItemInterface|null|array
      */
-    public function find(string $id, string $findItemClass = null)
+    public function find(string $id)
     {
-        return $this->repository->find($id, $findItemClass);
+        return $this->repository->find($id);
     }
 
     /**
      * @param array $filter
      * @param array $options
-     * @param string|null $findItemClass
      * @return StoreItemInterface|null|array
      */
-    public function findBy(array $filter = [], array $options = [], string $findItemClass = null)
+    public function findBy(array $filter = [], array $options = [])
     {
-        return $this->repository->findBy($filter, $options, $findItemClass);
+        return $this->repository->findBy($filter, $options);
     }
 }

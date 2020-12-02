@@ -12,7 +12,7 @@ use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\Cursor;
 
-class BaseRepository implements RepositoryInterface
+final class BaseRepository implements RepositoryInterface
 {
     /**
      * @var Database;
@@ -20,14 +20,42 @@ class BaseRepository implements RepositoryInterface
     protected $database;
 
     /**
+     * @var string
+     */
+    protected $collectionName;
+
+    /**
+     * @var string
+     */
+    protected $className;
+
+    /**
      * @var Collection
      */
     protected $collection;
 
-    public function __construct(Database $database, $collectionName)
+    public function __construct(Database $database, string $className, string $collectionName)
     {
         $this->database = $database;
-        $this->collection = $this->database->{$collectionName};
+        $this->className = $className;
+        $this->collectionName = $collectionName;
+        $this->collection = $this->database->{$this->getTableName()};
+    }
+
+    /**
+     * @return string
+     */
+    public function getClassName(): string
+    {
+        return $this->className;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTableName(): string
+    {
+        return $this->collectionName;
     }
 
     /**
@@ -43,7 +71,7 @@ class BaseRepository implements RepositoryInterface
     /**
      * @param StoreItemInterface[] $collection
      */
-    public function insertCollection($collection)
+    public function insertCollection(array $collection)
     {
         $objects = [];
         foreach ($collection as $item) {
@@ -93,33 +121,37 @@ class BaseRepository implements RepositoryInterface
 
     /**
      * @param string $id
-     * @param string $findItemClass
+     * @param array $options
      * @return StoreItemInterface|null|array
      */
-    public function find(string $id, string $findItemClass = null)
+    public function find(string $id, array $options = [])
     {
-        $row = $this->collection->findOne(['_id' => $id], ['typeMap' => $this->getTypeMap()]);
+        if (!isset($options['typeMap'])) {
+            $options['typeMap'] = $this->getTypeMap();
+        }
+        $row = $this->collection->findOne(['_id' => $id], $options);
 
         if (empty($row)) {
             return null;
         }
-        return isset($findItemClass) ? $findItemClass::restore($row) : $row;
+        $findItemClass = $this->getClassNameByOptions($options);
+
+        return is_subclass_of($findItemClass, StoreItemInterface::class) ? $findItemClass::restore($row) : $row;
     }
 
     /**
      * @param array $filter
      * @param array $options
-     * @param string|null $findItemClass
      * @return StoreItemInterface|null|array
      */
-    public function findBy(array $filter = [], array $options = [], string $findItemClass = null)
+    public function findBy(array $filter = [], array $options = [])
     {
         if (!isset($options['typeMap'])) {
             $options['typeMap'] = $this->getTypeMap();
         }
         $cursor = $this->collection->find($filter, $options);
 
-        return $this->handleCursorResult($cursor, $findItemClass);
+        return $this->handleCursorResult($cursor, $this->getClassNameByOptions($options));
     }
 
     /**
@@ -132,7 +164,7 @@ class BaseRepository implements RepositoryInterface
 
     /**
      * @param Cursor $cursor
-     * @param string|null $storeItemClass
+     * @param StoreItemInterface|string|null $storeItemClass
      * @return array
      */
     protected function handleCursorResult(Cursor $cursor, string $storeItemClass = null): array
@@ -144,12 +176,26 @@ class BaseRepository implements RepositoryInterface
         $rows = $cursor->toArray();
 
         $result = [];
-        $isObject = isset($storeItemClass);
+        $isObject = is_subclass_of($storeItemClass, StoreItemInterface::class);
         foreach ($rows as $row) {
             unset($row['_id']);
             $result[] = $isObject ? $storeItemClass::restore($row) : $row;
         }
 
         return $result;
+    }
+
+    /**
+     * @param array $options
+     * @return string|null
+     */
+    private function getClassNameByOptions(array $options): ?string
+    {
+        $findItemClass = null;
+        if (!isset($options['assoc']) || $options['assoc'] !== true) {
+            return $this->getClassName();
+        }
+
+        return null;
     }
 }

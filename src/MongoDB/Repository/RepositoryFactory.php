@@ -24,12 +24,12 @@ class RepositoryFactory implements RepositoryFactoryInterface
         $this->database = $database;
     }
 
-    public function get(string $collectionName): RepositoryInterface
+    public function get(string $className, string $collectionName): RepositoryInterface
     {
-        if (!isset(self::$repositories[$collectionName])) {
-            self::$repositories[$collectionName] = new BaseRepository($this->database, $collectionName);
+        if (!isset(self::$repositories[$className])) {
+            self::$repositories[$className] = new BaseRepository($this->database, $className, $collectionName);
         }
 
-        return self::$repositories[$collectionName];
+        return self::$repositories[$className];
     }
 }

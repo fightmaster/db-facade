@@ -6,11 +6,12 @@
 
 namespace Fightmaster\DB;
 
-
 interface RepositoryFactoryInterface
 {
     /**
-     * @param string $collectionName
+     * @param string $className
+     * @param string $tableName
+     * @return RepositoryInterface
      */
-    public function get(string $collectionName): RepositoryInterface;
+    public function get(string $className, string $tableName): RepositoryInterface;
 }

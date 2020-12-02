@@ -19,7 +19,7 @@ interface RepositoryInterface
     /**
      * @param StoreItemInterface[] $collection
      */
-    public function insertCollection($collection);
+    public function insertCollection(array $collection);
 
     /**
      * @param StoreItemInterface $object
@@ -44,16 +44,24 @@ interface RepositoryInterface
 
     /**
      * @param string $id
-     * @param string|null $findItemClass
      * @return StoreItemInterface|null|array
      */
-    public function find(string $id, string $findItemClass = null);
+    public function find(string $id);
 
     /**
      * @param array $filter
      * @param array $options
-     * @param string|null $findItemClass
      * @return StoreItemInterface|null|array
      */
-    public function findBy(array $filter = [], array $options = [], string $findItemClass = null);
+    public function findBy(array $filter = [], array $options = []);
+
+    /**
+     * @return string
+     */
+    public function getClassName(): string;
+
+    /**
+     * @return string
+     */
+    public function getTableName(): string;
 }
