@@ -94,10 +94,20 @@ abstract class RepositoryFacade implements RepositoryInterface
     /**
      * @param array $filter
      * @param array $options
-     * @return StoreItemInterface|null|array
+     * @return StoreItemInterface[]|array
      */
     public function findBy(array $filter = [], array $options = [])
     {
         return $this->repository->findBy($filter, $options);
+    }
+
+    /**
+     * @param array $filter
+     * @param array $options
+     * @return StoreItemInterface|null|array
+     */
+    public function findOneBy(array $filter = [], array $options = [])
+    {
+        return $this->repository->findOneBy($filter, $options);
     }
 }

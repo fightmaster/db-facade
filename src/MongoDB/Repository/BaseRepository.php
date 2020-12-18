@@ -126,23 +126,13 @@ final class BaseRepository implements RepositoryInterface
      */
     public function find(string $id, array $options = [])
     {
-        if (!isset($options['typeMap'])) {
-            $options['typeMap'] = $this->getTypeMap();
-        }
-        $row = $this->collection->findOne(['_id' => $id], $options);
-
-        if (empty($row)) {
-            return null;
-        }
-        $findItemClass = $this->getClassNameByOptions($options);
-
-        return is_subclass_of($findItemClass, StoreItemInterface::class) ? $findItemClass::restore($row) : $row;
+        return $this->findOneBy(['_id' => $id], $options);
     }
 
     /**
      * @param array $filter
      * @param array $options
-     * @return StoreItemInterface|null|array
+     * @return StoreItemInterface[]|array
      */
     public function findBy(array $filter = [], array $options = [])
     {
@@ -152,6 +142,26 @@ final class BaseRepository implements RepositoryInterface
         $cursor = $this->collection->find($filter, $options);
 
         return $this->handleCursorResult($cursor, $this->getClassNameByOptions($options));
+    }
+
+    /**
+     * @param array $filter
+     * @param array $options
+     * @return StoreItemInterface|null|array
+     */
+    public function findOneBy(array $filter = [], array $options = [])
+    {
+        if (!isset($options['typeMap'])) {
+            $options['typeMap'] = $this->getTypeMap();
+        }
+        $row = $this->collection->findOne($filter, $options);
+
+        if (empty($row)) {
+            return null;
+        }
+        $findItemClass = $this->getClassNameByOptions($options);
+
+        return is_subclass_of($findItemClass, StoreItemInterface::class) ? $findItemClass::restore($row) : $row;
     }
 
     /**
